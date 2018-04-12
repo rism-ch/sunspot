@@ -37,12 +37,16 @@ end
 
 Sunspot.setup(Post) do
   text :title, :boost => 2
+  text :text_array, :boost => 3 do
+    [title, title]
+  end
   text :body, :stored => true, :more_like_this => true
   text :backwards_title do
     title.reverse if title
   end
   text :tags, :more_like_this => true
   string :title, :stored => true
+  string :author_name
   integer :blog_id, :references => Blog
   integer :category_ids, :multiple => true
   float :average_rating, :using => :ratings_average, :trie => true
