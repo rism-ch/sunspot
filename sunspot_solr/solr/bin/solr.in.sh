@@ -25,7 +25,7 @@ SOLR_HEAP="512m"
 # Comment out SOLR_HEAP if you are using this though, that takes precedence
 #SOLR_JAVA_MEM="-Xms512m -Xmx512m"
 
-# Enable verbose GC logging
+# Enable verbose GC logging (Java 9+)
 #GC_LOG_OPTS="-Xlog:gc*"
 
 # Enable verbose GC logging (Java <9)
