@@ -42,19 +42,17 @@ module Sunspot
         keywords = escape_quotes(params.delete(:q))
         options = params.map { |key, value| escape_param(key, value) }.join(' ')
         q_name = "q#{@target.name}#{self.object_id}"
-        fq_name = "f#{q_name}"
 
         {
-          :q => "_query_:\"{!join from=#{@from} to=#{@to} v=$#{q_name} fq=$#{fq_name}}\"",
-          q_name => "_query_:\"{!edismax #{options}}#{keywords}\"",
-          fq_name => "type:#{@target.name}"
+          :q     => "_query_:\"{!join from=#{@from} to=#{@to} v=$#{q_name}}\"",
+          q_name => "_query_:\"{!field f=type}#{@target.name}\"+_query_:\"{!edismax #{options}}#{keywords}\""
         }
       end
 
       #
       # Assign a new boost query and return it.
       #
-      def create_boost_query(factor)
+      def add_boost_query(factor)
       end
 
       #

@@ -44,6 +44,10 @@ module Sunspot
       def optimize
       end
 
+      def config
+        Sunspot::Configuration.build
+      end
+
       def dirty?
         false
       end
@@ -104,7 +108,7 @@ module Sunspot
           []
         end
 
-        def facet(name)
+        def facet(name, dynamic_name = nil)
           FacetStub.new
         end
 
@@ -122,6 +126,9 @@ module Sunspot
 
         def execute
           self
+        end
+
+        def spellcheck_collation
         end
       end
 
@@ -219,7 +226,7 @@ module Sunspot
           []
         end
 
-        def facet(name)
+        def facet(name, dynamic_name = nil)
           FacetStub.new
         end
 

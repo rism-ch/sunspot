@@ -15,6 +15,7 @@ module Sunspot
       @more_like_this_field_factories_cache = Hash.new { |h, k| h[k] = [] }
       @dsl = DSL::Fields.new(self)
       @document_boost_extractor = nil
+      @id_prefix_extractor = nil
       add_field_factory(:class, Type::ClassType.instance)
     end
 
@@ -61,6 +62,7 @@ module Sunspot
       field_factory = FieldFactory::Static.new(name, Type::TextType.instance, options, &block)
       @text_field_factories[name] = field_factory
       @text_field_factories_cache[field_factory.name] = field_factory
+      @field_factories_cache[field_factory.name] = field_factory
       if stored
         @stored_field_factories_cache[field_factory.name] << field_factory
       end
@@ -81,6 +83,7 @@ module Sunspot
       field_factory = FieldFactory::Dynamic.new(name, type, options, &block)
       @dynamic_field_factories[field_factory.signature] = field_factory
       @dynamic_field_factories_cache[field_factory.name] = field_factory
+      @field_factories_cache[field_factory.name] = field_factory
       if stored
         @stored_field_factories_cache[field_factory.name] << field_factory
       end
@@ -104,6 +107,24 @@ module Sunspot
           end
         else
           DataExtractor::BlockExtractor.new(&block)
+        end
+    end
+
+    #
+    # Add id prefix for compositeId router
+    #
+    def add_id_prefix(attr_name, &block)
+      @id_prefix_extractor =
+        case attr_name
+        when Symbol
+          DataExtractor::AttributeExtractor.new(attr_name)
+        when String
+          DataExtractor::Constant.new(attr_name)
+        when nil
+          DataExtractor::BlockExtractor.new(&block) if block_given?
+        else
+          raise ArgumentError,
+            "The ID prefix has to be either a Symbol, a String or a Proc"
         end
     end
 
@@ -269,6 +290,54 @@ module Sunspot
       if @document_boost_extractor
         @document_boost_extractor.value_for(model)
       end
+    end
+
+    def id_prefix_for(model)
+      if @id_prefix_extractor
+        value = @id_prefix_extractor.value_for(model)
+
+        if value.is_a?(String) and value.size > 0
+          value[-1] == "!" ? value : "#{value}!"
+        end
+      end
+    end
+
+    #
+    # Get value for `id_prefix` defined as String
+    #
+    # ==== Returns
+    #
+    # String:: value for `id_prefix` defined as String
+    #
+    def id_prefix_for_class
+      return if !id_prefix_defined? || id_prefix_requires_instance?
+
+      @id_prefix_extractor.value_for(nil)
+    end
+
+    #
+    # Check if `id_prefix` is defined for class associated with this setup.
+    #
+    # ==== Returns
+    #
+    # Boolean:: True if class associated with this setup has defined `id_prefix`
+    #
+    def id_prefix_defined?
+      !@id_prefix_extractor.nil?
+    end
+
+    #
+    # Check if instance is required to get `id_prefix` value (instance is required for Proc and
+    # Symbol `id_prefix` only. Value for String `id_prefix` can be get on class level)
+    #
+    # ==== Returns
+    #
+    # Boolean:: True if instance is required to get `id_prefix` value
+    #
+    def id_prefix_requires_instance?
+      return false unless id_prefix_defined?
+
+      !@id_prefix_extractor.is_a?(DataExtractor::Constant)
     end
 
     protected
